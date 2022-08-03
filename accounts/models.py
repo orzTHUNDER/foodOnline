@@ -89,6 +89,12 @@ class User(AbstractBaseUser):
     def has_module_perms(self, app_label):     #Returns True for active and superusers
         return True                            #Returns False for inactive users
 
+    def get_role(self):
+        if self.role == 1:
+            user_role = 'Vendor'
+        elif self.role == 2:
+            user_role = 'Customer'
+        return user_role
     
 class UserProfile(models.Model):
     user = OneToOneField(User, on_delete=models.CASCADE,blank=True, null=True)      #one user can have only one account
