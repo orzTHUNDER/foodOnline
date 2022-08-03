@@ -46,11 +46,11 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
-    RESTAURANT = 1       #For seperating customer with vendor(rest owner)
+    VENDOR = 1       #For seperating customer with vendor(rest owner)
     CUSTOMER = 2
 
     ROLE_CHOICE = (
-        (RESTAURANT,'Restaurant'),
+        (VENDOR,'Vendor'),
         (CUSTOMER, 'Customer'),
     )
 
