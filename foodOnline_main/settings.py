@@ -143,3 +143,12 @@ from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
     messages.ERROR: 'danger',  #bootstrap danger
 }
+
+#Email configuration
+
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_PORT = config('EMAIL_PORT', cast=int)  #since it is an int value
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = True #Email will be sent securely if u add this
+DEFAULT_FROM_EMAIL = 'foodOnline Marketplace <foodOnline26@gmail.com>'
