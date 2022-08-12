@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required,user_passes_test  #for
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode
+from vendor.models import Vendor
 
 
 # Restrict the vendor from accessing the customer page
