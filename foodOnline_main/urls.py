@@ -22,5 +22,5 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
-    path('accounts/', include('accounts.urls')) #redirect user to acounts url for that link path
+    path('', include('accounts.urls')) #redirect user to acounts url for that link path
 ] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
