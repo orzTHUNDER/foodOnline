@@ -12,6 +12,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode
 from vendor.models import Vendor
+from django.template.defaultfilters import slugify
 
 
 # Restrict the vendor from accessing the customer page
@@ -85,7 +86,7 @@ def registerUser(request):
 def registerVendor(request):
     if request.user.is_authenticated:                 #when user is logged-in and goes to /login path in web-url this will trigger
         messages.warning(request, 'You are already logged in!')
-        return redirect('dashboard')
+        return redirect('myAccount')
 
     elif request.method == 'POST':
         #store the data and create the vendor
@@ -102,6 +103,10 @@ def registerVendor(request):
             user.save()
             vendor = v_form.save(commit=False)  #need to provide user and userprofile before posting in db(commit=false)
             vendor.user = user
+            
+            vendor_name = v_form.cleaned_data['vendor_name']
+            vendor.vendor_slug = slugify(vendor_name)+'-'+str(user.id)  #for any same vendor_name conflictions, we add user_id with it to make it unique
+            
             user_profile = UserProfile.objects.get(user=user)    #signals will create user_profile
             vendor.user_profile = user_profile
             vendor.save()
@@ -275,3 +280,5 @@ def reset_password(request):
             return redirect('reset_password')
     
     return render(request, 'accounts/reset_password.html')
+
+
