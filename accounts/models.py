@@ -2,6 +2,11 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db.models.fields.related import ForeignKey, OneToOneField
 
+
+from django.contrib.gis.db import models as gismodels
+from django.contrib.gis.geos import Point
+
+
 # Create your models here.
 class UserManager(BaseUserManager):  
     def create_user(self, first_name, last_name, username, email, password=None):  #self is used if a fn is created inside a class
@@ -107,6 +112,7 @@ class UserProfile(models.Model):
     pin_code = models.CharField(max_length=6, blank=True, null=True)
     latitude = models.CharField(max_length=20, blank=True, null=True)
     longitude = models.CharField(max_length=20, blank=True, null=True)
+    location = gismodels.PointField(blank=True, null=True, srid=4326)  #spatial-reference identifier--->unique identifier associated with specific co-ordinate system [by default --> 4326]
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
@@ -117,8 +123,14 @@ class UserProfile(models.Model):
     def __str__(self):
         return self.user.email
 
-
-
+    #CREATING THE POINT IN SPATIAL-DATABASE
+    
+    #Over-riding the default django save function!!
+    def save(self, *args, **kwargs):
+        if self.latitude and self.longitude:    #we can create the point if we have lat and long, so it is required
+            self.location = Point(float(self.longitude), float(self.latitude))  
+            return super(UserProfile, self).save(*args, **kwargs)   #super is used when we over-ride save
+        return super(UserProfile, self).save(*args, **kwargs)       
 
 
 

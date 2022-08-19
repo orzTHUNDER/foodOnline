@@ -1,11 +1,14 @@
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from vendor.models import Vendor
 from menu.models import Category, FoodItem
 from django.db.models import Prefetch
 from .context_processors import get_cart_counter,  get_cart_amounts
 from django.contrib.auth.decorators import login_required
-
+from django.db.models import Q
+from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.measure import D # ``D`` is a shortcut for ``Distance``
+from django.contrib.gis.db.models.functions import Distance
 
 from .models import Cart
 # Create your views here.
@@ -125,3 +128,52 @@ def delete_cart(request, cart_id):
                 return JsonResponse({'status': 'Failed', 'message': 'Cart Item does not exist!'})
         else:
             return JsonResponse({'status': 'Failed', 'message': 'Invalid request!'})
+
+
+
+
+
+def search(request):
+
+    if not 'address' in request.GET:
+        return redirect('marketplace')
+
+    else:
+
+        address = request.GET['address']   #'address'  is from <input type="text" name="address" class="location-field-text filter" id="id_address" required placeholder="All Locations">
+        latitude = request.GET['lat']
+        longitude = request.GET['lng']
+        radius = request.GET['radius']
+        keyword = request.GET['keyword'] #rest-name
+
+        # get vendor ids that has the food item the user is looking for
+        fetch_vendors_by_fooditems = FoodItem.objects.filter(food_title__icontains=keyword, is_available=True).values_list('vendor', flat=True)   #provides list of ID's of vendors!!
+
+        #FoodItem.objects.filter(food_title__icontains=keyword, is_available=True) willl give the food-items itself, but we need the list of vendors
+        #values_list('vendor', flat=True) gives list of venodr
+
+        vendors = Vendor.objects.filter(Q(id__in=fetch_vendors_by_fooditems) | Q(vendor_name__icontains=keyword, is_approved=True, user__is_active=True))   #Q-object is user for complex quering. Since ware using "OR"!!!
+        #vendors = Vendor.objects.filter(vendor_name__icontains=keyword, is_approved=True, user__is_active=True)  #search user with the "restaurant_name" given in the search!!
+        #here we are getting vendors from both "rest-name" as well as "food-item"
+
+
+        if latitude and longitude and radius:  #ONLY RESTAURANTS HAVE Lat and LONG
+            pnt = GEOSGeometry('POINT(%s %s)' % (longitude, latitude))   #%s for string representation technique of dynamic-values
+
+            vendors = Vendor.objects.filter(Q(id__in=fetch_vendors_by_fooditems) | Q(vendor_name__icontains=keyword, is_approved=True, user__is_active=True),
+            user_profile__location__distance_lte=(pnt, D(km=radius)) #find all restaurants having distance less than equal to the radius
+            ).annotate(distance=Distance("user_profile__location", pnt)).order_by("distance")  #using the in-built geodjango Disatance function
+            #annotate gets the summary from the db
+        
+            for v in vendors:
+                v.kms = round(v.distance.km, 1)    #distance is not a field but we define it in the prev step, km --> kilometre
+                #round upto to 1 decimal
+        
+        vendor_count = vendors.count()
+        context = {
+            'vendors': vendors,
+            'vendor_count': vendor_count,
+            'source_location': address,
+        }
+
+        return render(request, 'marketplace/listings.html', context)
